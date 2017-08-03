@@ -292,7 +292,7 @@ var jc_vue = new Vue({
   },
   filters: {
     getUrl: function(p, k) {
-      return "/" + jc_vue.page + "/page-" + p + "#comment-" + k;
+      return "/" + jc_vue.current_page + "/page-" + p + "#comment-" + k;
     },
     getPageName: function(key) {
       const page_names = {
