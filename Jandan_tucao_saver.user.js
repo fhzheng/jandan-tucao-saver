@@ -1,17 +1,13 @@
 // ==UserScript==
 // @name        Jandan tucao saver
 // @namespace   mtdwss@gmail.com
-// @include     http://jandan.net/duan
-// @include     http://jandan.net/duan/*
-// @include     http://jandan.net/pic
-// @include     http://jandan.net/pic/*
-// @include     http://jandan.net/ooxx
-// @include     http://jandan.net/ooxx/*
-// @include     http://jandan.net/qa
-// @include     http://jandan.net/qa/*
+// @include     http://jandan.net/duan*
+// @include     http://jandan.net/pic*
+// @include     http://jandan.net/ooxx*
+// @include     http://jandan.net/qa*
 // @require     https://cdn.bootcss.com/vue/2.4.2/vue.min.js
-// @require     https://gist.githubusercontent.com/arantius/3123124/raw/grant-none-shim.js
-// @version     1
+// @description save jandan.net's tucao
+// @version     1.02
 // @grant       none
 // ==/UserScript==
 if (window.top != window.self) return;
@@ -156,7 +152,7 @@ $.jcsaver = {
   expandComment: function(cno) {
     key = $.jcsaver.st_item_prefix + cno;
     var citem = $.jcsaver.storage.get(key);
-    console.log(citem);
+    // console.log(citem);
     $.each(jc_vue.items, function(index, value) {
       if (value.k == cno) {
         jc_vue.$set(jc_vue.items[index], "comments", citem);
@@ -179,7 +175,7 @@ $.jcsaver = {
   initVue: function() {
     var pageKey = this.getPageKey();
     jc_vue.pages = this.storage.addKey(pageKey);
-    console.log(jc_vue.pages);
+    // console.log(jc_vue.pages);
   },
   getPageKey: function() {
     var url = window.location.href;
@@ -192,7 +188,7 @@ $.jcsaver = {
       var cachedKeys = localStorage.getItem(k);
       if (cachedKeys === null) cachedKeys = [];
       else cachedKeys = JSON.parse(cachedKeys);
-      console.log(cachedKeys);
+    //   console.log(cachedKeys);
       var flag = true;
       $.each(cachedKeys, function(index, value) {
         if (value == key) {
@@ -204,7 +200,7 @@ $.jcsaver = {
         cachedKeys.push(key);
         localStorage.setItem(k, JSON.stringify(cachedKeys));
       }
-      console.log(cachedKeys);
+    //   console.log(cachedKeys);
       return cachedKeys;
     },
     add: function(key, value) {
@@ -222,16 +218,16 @@ $.jcsaver = {
       }
 
       var index_list = localStorage.getItem($.jcsaver.st_index_key);
-      console.log(index_list);
+    //   console.log(index_list);
       index_list = JSON.parse(index_list);
-      console.log($.isArray(index_list));
+    //   console.log($.isArray(index_list));
       if (!$.isArray(index_list)) {
-        console.log("不是列表");
+        // console.log("不是列表");
         index_list = [];
       }
       var flag = false;
       $.each(index_list, function(i, v) {
-        console.log(v);
+        // console.log(v);
         if (v.k == key) {
           v.c += 1;
           flag = true;
@@ -243,7 +239,7 @@ $.jcsaver = {
         n.k = key;
         n.c = 1;
         n.p = $.jcsaver.jc_current_page;
-        console.log(n);
+        // console.log(n);
         index_list.push(n);
       }
       localStorage.setItem($.jcsaver.st_index_key, JSON.stringify(index_list));
@@ -258,7 +254,7 @@ $.jcsaver = {
       $.each(item_list, function(index, value) {
         if (value.k == cno) {
           item_list.splice(index, 1);
-          console.log(item_list);
+        //   console.log(item_list);
           localStorage.setItem(k, JSON.stringify(item_list));
           return false;
         }
