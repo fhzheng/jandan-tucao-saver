@@ -108,9 +108,9 @@ a.jc_exp{
         <div class="jc_list_area">
             <div v-for="(item,idx) in items" v-bind:class="'jc_bar jc_bar'+idx%2">&#9679;
                 <a v-bind:cno="item.k" v-on:click="loadComments(item.k, item.e);item.e= !item.e;" class="jc_exp">第{{ item.p }}页，第{{ item.k }}楼，{{ item.c }}条</a>
-                <span class="jc_go" title="Go to this page"><a v-bind:href="item.p|getUrl(item.k)" target="blank" style="color:white;">-></a></span>
+                <span class="jc_go" title="Go to this location"><a v-bind:href="item.p|getUrl(item.k)" target="blank" style="color:white;">&#9992;</a></span>
                 </span>
-                <span class="jc_del" v-on:click="deleteHistory(item.k);" onclick="$(this).parent('.jc_bar').remove().empty();" title="Delete this comment">x</span>
+                <span class="jc_del" v-on:click="deleteHistory(item.k);" onclick="$(this).parent('.jc_bar').remove().empty();" title="Delete this comment">&#10005;</span>
                 <div class="jc_comments" v-show="item.e">
                     <div v-for="comment in item.comments">{{ comment.d+':' }} <strong>{{ comment.co }}</strong></div>
                 </div>
