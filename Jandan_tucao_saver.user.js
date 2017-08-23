@@ -7,7 +7,7 @@
 // @include     http://jandan.net/qa*
 // @require     https://cdn.bootcss.com/vue/2.4.2/vue.min.js
 // @description save jandan.net's tucao
-// @version     1.02
+// @version     1.03
 // @grant       none
 // ==/UserScript==
 if (window.top != window.self) return;
@@ -125,6 +125,41 @@ $.jcsaver = {
 </div>
     `),
   jc_current_page: "",
+  onPageLoad: function(){//当页面初始化的时候发现
+    var myregexp = /#comment-\d+/g;
+    var hash = myregexp.exec($(location).attr('hash'));
+    if(hash === null || hash === undefined || hash.length <= 0) return;
+    hash = hash[0];
+    if($(hash).length > 0) {
+      var index_storage = JSON.parse(localStorage.getItem($.jcsaver.st_index_key));
+      console.log(index_storage);
+      if(index_storage === null || index_storage.length <= 0) return;
+      // 更新index数据库当前post的页数
+      $.each(index_storage, function(index, val){
+        if(val['k'] == hash.split('-')[1]) {
+          if(val['p'] != $.jcsaver.jc_current_page) {
+            val['p'] = $.jcsaver.jc_current_page;
+            localStorage.setItem($.jcsaver.st_index_key, JSON.stringify(index_storage));
+          }
+          return false;
+        }
+      });
+      return;
+    }
+    if(parseInt($('.commentlist li').eq(0).attr('id').split('-')[1]) < parseInt(hash.split('-')[1])) {
+      $.jcsaver.turnPage($.jcsaver.jc_current_page + 1, hash);
+      return;
+    }
+    if(parseInt($('.commentlist li').eq(-1).attr('id').split('-')[1]) > parseInt(hash.split('-')[1])) {
+      $.jcsaver.turnPage($.jcsaver.jc_current_page - 1, hash);
+      return;
+    }
+  },
+  turnPage: function(pageNo, hash){
+    var url = '//jandan.net/' + $.jcsaver.getPageKey() + '/page-' + pageNo + hash;
+    console.log(url);
+    if(confirm('跳转到' + url + '?')) window.location.href = url;
+  },
   onAjaxSuccess: function(event, xhr, settings) {
     if (settings.url == "/jandan-tucao.php" && xhr.responseJSON.code == "0") {
       var data = xhr.responseJSON.data;
@@ -167,6 +202,7 @@ $.jcsaver = {
       .text()
       .replace(/\D+/g, "");
     this.st_index_key = this.st_index_prefix + pageKey;
+    $.jcsaver.onPageLoad();
     $("body").append(this.jc_html);
     $style = $("<style></style>");
     $style.text(this.jc_css);
