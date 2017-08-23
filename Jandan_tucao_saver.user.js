@@ -7,7 +7,7 @@
 // @include     http://jandan.net/qa*
 // @require     https://cdn.bootcss.com/vue/2.4.2/vue.min.js
 // @description save jandan.net's tucao
-// @version     1.03
+// @version     1.02
 // @grant       none
 // ==/UserScript==
 if (window.top != window.self) return;
@@ -80,11 +80,14 @@ $.jcsaver = {
   cursor: pointer;
   color: white;
 }
-.jc_bar > span.jc_exp{
+.jc_bar > span.jc_go{
     background-color: #008f52;
 }
 .jc_bar > span.jc_del{
     background-color: #c60a0a;
+}
+a.jc_exp{
+    cursor: pointer;
 }
 .jc_bar {
   line-height: 30px;
@@ -103,12 +106,11 @@ $.jcsaver = {
     <div id="jc_area" v-show="show">
         <div class="jc_switch_bar"><span v-for="page in pages" v-bind:page="page" onclick="$.jcsaver.switchArea($(this))" v-bind:class="page==current_page?'current_tab':''">{{ page|getPageName }}</span></div>
         <div class="jc_list_area">
-            <div v-for="(item,idx) in items" v-bind:class="'jc_bar jc_bar'+idx%2">
-                <a v-bind:href="item.p|getUrl(item.k)" target="blank">第{{ item.p }}页，第{{ item.k }}楼，{{ item.c }}条</a>
-                <span v-bind:cno="item.k" v-on:click="loadComments(item.k, item.e);item.e= !item.e;" class="jc_exp"><span v-if="!item.e">+</span>
-                <span v-else>-</span>
+            <div v-for="(item,idx) in items" v-bind:class="'jc_bar jc_bar'+idx%2">&#9679;
+                <a v-bind:cno="item.k" v-on:click="loadComments(item.k, item.e);item.e= !item.e;" class="jc_exp">第{{ item.p }}页，第{{ item.k }}楼，{{ item.c }}条</a>
+                <span class="jc_go" title="Go to this page"><a v-bind:href="item.p|getUrl(item.k)" target="blank" style="color:white;">-></a></span>
                 </span>
-                <span class="jc_del" v-on:click="deleteHistory(item.k);" onclick="$(this).parent('.jc_bar').remove().empty();">X</span>
+                <span class="jc_del" v-on:click="deleteHistory(item.k);" onclick="$(this).parent('.jc_bar').remove().empty();" title="Delete this comment">x</span>
                 <div class="jc_comments" v-show="item.e">
                     <div v-for="comment in item.comments">{{ comment.d+':' }} <strong>{{ comment.co }}</strong></div>
                 </div>
