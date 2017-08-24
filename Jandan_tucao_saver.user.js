@@ -124,7 +124,7 @@ a.jc_exp{
 </div>
     `),
   jc_current_page: "",
-  onPageLoad: function(){//当页面初始化的时候发现
+  onPageLoad: function(){//当页面初始化的时候发现如果地址的hash不在当前页，则提示是否跳转。如果在当前页，决定是否更新webstorage
     var myregexp = /#comment-\d+/g;
     var hash = myregexp.exec($(location).attr('hash'));
     if(hash === null || hash === undefined || hash.length <= 0) return;
