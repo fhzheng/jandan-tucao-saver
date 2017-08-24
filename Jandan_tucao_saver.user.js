@@ -7,7 +7,7 @@
 // @include     http://jandan.net/qa*
 // @require     https://cdn.bootcss.com/vue/2.4.2/vue.min.js
 // @description save jandan.net's tucao
-// @version     1.02
+// @version     1.04.1
 // @grant       none
 // ==/UserScript==
 if (window.top != window.self) return;
