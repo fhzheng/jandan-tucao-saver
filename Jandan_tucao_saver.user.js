@@ -7,7 +7,7 @@
 // @include     http://jandan.net/qa*
 // @require     https://cdn.bootcss.com/vue/2.4.2/vue.min.js
 // @description save jandan.net's tucao
-// @version     1.04
+// @version     1.02
 // @grant       none
 // ==/UserScript==
 if (window.top != window.self) return;
@@ -199,10 +199,10 @@ a.jc_exp{
   },
   init: function() {
     var pageKey = this.getPageKey();
-    this.jc_current_page = $(".current-comment-page")
+    this.jc_current_page = parseInt($(".current-comment-page")
       .eq(0)
       .text()
-      .replace(/\D+/g, "");
+      .replace(/\D+/g, ""));
     this.st_index_key = this.st_index_prefix + pageKey;
     $.jcsaver.onPageLoad();
     $("body").append(this.jc_html);
