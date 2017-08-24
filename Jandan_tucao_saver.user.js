@@ -98,9 +98,6 @@ a.jc_exp{
 
 
     `,
-  jc_btn: $(
-    '<div id="jc_btn"><span class="show" onclick="jc_vue.show = !jc_vue.show;">显示</span><span class="settings">设置</span></div>'
-  ),
   jc_html: $(`
 <div id="jc_main">
     <div id="jc_area" v-show="show">
