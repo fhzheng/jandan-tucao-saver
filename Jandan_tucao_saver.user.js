@@ -7,7 +7,7 @@
 // @include     http://jandan.net/qa*
 // @require     https://cdn.bootcss.com/vue/2.4.2/vue.min.js
 // @description save jandan.net's tucao
-// @version     1.04.1
+// @version     1.10.0
 // @grant       none
 // ==/UserScript==
 if (window.top != window.self) return;
@@ -22,7 +22,7 @@ $.jcsaver = {
   text-align: left;
   text-indent: 0;
   width: 50%;
-  height: 300px;
+  min-height: 300px;
   background-color: #f2f2f2;
   z-index: 100000;
   position: fixed;
@@ -71,20 +71,22 @@ $.jcsaver = {
   display: block;
   float: right;
   margin-right: 20px;
-  width: 30px;
+  width: 20px;
   text-align: center;
-  height: 20px;
+  height: 15px;
   margin-top: 5px;
-  line-height: 20px;
+  line-height: 15px;
   border-radius: 5px;
   cursor: pointer;
   color: white;
+  font-size: 10px;
+  box-shadow: 1px 1px 1px #6c6c6c;
 }
 .jc_bar > span.jc_go{
     background-color: #008f52;
 }
 .jc_bar > span.jc_del{
-    background-color: #c60a0a;
+    background-color: #959595;
 }
 a.jc_exp{
     cursor: pointer;
@@ -95,36 +97,46 @@ a.jc_exp{
 .jc_bar0 {
   background-color: #c9c9c9;
 }
-
+.jc_hint {
+  display: inline-block;
+  height: 24px;
+  width: 24px;
+  line-height: 24px;
+  text-align: center;
+  background-color: red;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+}
 
     `,
   jc_html: $(`
-<div id="jc_main">
-    <div id="jc_area" v-show="show">
-        <div class="jc_switch_bar"><span v-for="page in pages" v-bind:page="page" onclick="$.jcsaver.switchArea($(this))" v-bind:class="page==current_page?'current_tab':''">{{ page|getPageName }}</span></div>
-        <div class="jc_list_area">
-            <div v-for="(item,idx) in items" v-bind:class="'jc_bar jc_bar'+idx%2">&#9679;
-                <a v-bind:cno="item.k" v-on:click="loadComments(item.k, item.e);item.e= !item.e;" class="jc_exp">第{{ item.p }}页，第{{ item.k }}楼，{{ item.c }}条</a>
-                <span class="jc_go" title="Go to this location"><a v-bind:href="item.p|getUrl(item.k)" target="blank" style="color:white;">&#9992;</a></span>
-                </span>
-                <span class="jc_del" v-on:click="deleteHistory(item.k);" onclick="$(this).parent('.jc_bar').remove().empty();" title="Delete this comment">&#10005;</span>
-                <div class="jc_comments" v-show="item.e">
-                    <div v-for="comment in item.comments">{{ comment.d+':' }} <strong>{{ comment.co }}</strong></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div id="jc_btn">
-        <span class="show" v-on:click="show = !show">
-            <span v-if="show">关闭</span>
-            <span v-else>打开</span>
-        </span>
-        <span class="settings">设置</span>
-    </div>
+  <div id="jc_main">
+  <div id="jc_area" v-show="show">
+      <div class="jc_switch_bar"><span v-for="page in pages" v-bind:page="page" onclick="$.jcsaver.switchArea($(this))" v-bind:class="page==current_page?'current_tab':''">{{ page|getPageName }}</span></div>
+      <div class="jc_list_area">
+          <div v-for="(item,idx) in items" v-bind:class="'jc_bar jc_bar'+idx%2">&#9679;
+              <a v-bind:cno="item.k" v-on:click="loadComments(item.k, item.e);item.e= !item.e;" class="jc_exp">第{{ item.p }}页，第{{ item.k }}楼，{{ item.c }}条</a>
+              <span class="jc_go" title="Go to this location"><a v-bind:href="item.p|getUrl(item.k)" target="blank" style="color:white;">&#9992;</a></span>
+              </span>
+              <span class="jc_del" v-on:click="deleteHistory(item.k);" onclick="$(this).parent('.jc_bar').remove().empty();" title="Delete this comment">&#10005;</span>
+              <div class="jc_comments" v-show="item.e">
+                  <div v-for="comment in item.comments">{{ comment.d+':' }} <strong>{{ comment.co|removeHTMLTags }}</strong> <span v-if="comment.rl !== undefined && comment.rl.length > 0"　v-bind:title="renderReplies(comment.rl)" class="jc_hint">{{ comment.rl.length }}</span></div>
+              </div>
+          </div>
+      </div>
+  </div>
+  <div id="jc_btn">
+      <span class="show" v-on:click="show = !show">
+      <span v-if="show">关闭</span>
+      <span v-else>打开</span>
+      </span>
+      <span class="settings">设置</span>
+  </div>
 </div>
     `),
   jc_current_page: "",
-  onPageLoad: function(){//当页面初始化的时候发现如果地址的hash不在当前页，则提示是否跳转。如果在当前页，决定是否更新webstorage
+  onPageLoad: function(){//当页面初始化的时候发现
     var myregexp = /#comment-\d+/g;
     var hash = myregexp.exec($(location).attr('hash'));
     if(hash === null || hash === undefined || hash.length <= 0) return;
@@ -154,10 +166,49 @@ a.jc_exp{
       return;
     }
   },
+  // 翻页
   turnPage: function(pageNo, hash){
     var url = '//jandan.net/' + $.jcsaver.getPageKey() + '/page-' + pageNo + hash;
     console.log(url);
     if(confirm('跳转到' + url + '?')) window.location.href = url;
+  },
+  // 获取回复
+  refreshReply: function(){
+    $.each($.jcsaver.jc_keys, function(cat_idx, cat_val){
+      var cat_key = $.jcsaver.st_index_prefix + cat_val;
+      var post_list = $.jcsaver.storage.get(cat_key);
+      if(!$.isArray(post_list)) return true;
+      $.each(post_list, function(post_idx, post_val){
+        var r = 0;
+        var my_comment_list = $.jcsaver.storage.get('jc_' + post_val.k);
+        $.get('/tucao/'+post_val.k, function(data){
+          // 获取到了这条post下面的所有吐槽
+          $.each(my_comment_list, function(my_idx, my_val){
+            // console.log(my_val);
+            my_val.rl = [];
+            $.each(data.tucao, function(remote_idx, remote_val){
+              // console.log(remote_val);
+              var regexP = /href=\"#tucao-\d+/g;
+              var regexL = regexP.exec(remote_val.comment_content);
+              if(!$.isArray(regexL)) return true;
+              // console.log(regexL);
+              // console.log('href="#tucao-' + my_val.c);
+              if($.inArray('href="#tucao-' + my_val.c, regexL) >= 0 ){
+                // console.log('========================');
+                // console.log(remote_val.comment_content);
+                var n = [];
+                n.push(remote_val.comment_author);
+                n.push(remote_val.comment_content);
+                my_val.rl.push(n);
+                // console.log(n);
+              }
+            })
+          });
+          console.log(my_comment_list);
+          localStorage.setItem('jc_' + post_val.k, JSON.stringify(my_comment_list));
+        })
+      });
+    });
   },
   onAjaxSuccess: function(event, xhr, settings) {
     if (settings.url == "/jandan-tucao.php" && xhr.responseJSON.code == "0") {
@@ -335,6 +386,9 @@ var jc_vue = new Vue({
       var result = page_names[key];
       if (result === undefined) result = key;
       return result;
+    },
+    removeHTMLTags: function(string){
+      return string.replace(/(<([^>]+)>)/ig, '');
     }
   },
   methods: {
@@ -345,10 +399,19 @@ var jc_vue = new Vue({
     deleteHistory: function(key) {
       console.log("start vue delete history");
       $.jcsaver.storage.deleteHistory(jc_vue.current_page, key);
+    },
+    renderReplies: function(replies){
+      var result = "";
+      $.each(replies, function(idx, val){
+        result += val[0] + ': ';
+        result += val[1].replace(/(<([^>]+)>)/ig, '') + '\n\n';
+      })
+      return result;
     }
   }
 });
 $.jcsaver.initVue();
+$.jcsaver.refreshReply();
 $(document).ajaxSuccess(function(event, xhr, settings) {
   $.jcsaver.onAjaxSuccess(event, xhr, settings);
 });
