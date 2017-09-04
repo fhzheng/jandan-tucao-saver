@@ -7,7 +7,7 @@
 // @include     http://jandan.net/qa*
 // @require     https://cdn.bootcss.com/vue/2.4.2/vue.min.js
 // @description save jandan.net's tucao
-// @version     1.10.0
+// @version     1.10.1
 // @grant       none
 // ==/UserScript==
 if (window.top != window.self) return;
@@ -204,7 +204,7 @@ a.jc_exp{
               }
             })
           });
-          console.log(my_comment_list);
+          // console.log(my_comment_list);
           localStorage.setItem('jc_' + post_val.k, JSON.stringify(my_comment_list));
         })
       });
@@ -247,6 +247,10 @@ a.jc_exp{
   },
   init: function() {
     var pageKey = this.getPageKey();
+    if($.inArray(pageKey, ['duan', 'pic', 'ooxx', 'qa']) <0 ) {
+      console.log('Jandan_tucao_saver: current page not match!');
+      return false;
+    }
     this.jc_current_page = parseInt($(".current-comment-page")
       .eq(0)
       .text()
