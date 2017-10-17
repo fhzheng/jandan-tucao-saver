@@ -1,13 +1,20 @@
 // ==UserScript==
-// @name        Jandan tucao saver
+// @name        煎蛋吐槽管理器
 // @namespace   mtdwss@gmail.com
+
 // @include     http://jandan.net/duan*
 // @include     http://jandan.net/pic*
 // @include     http://jandan.net/ooxx*
 // @include     http://jandan.net/qa*
+
+// @include     https://jandan.net/duan*
+// @include     https://jandan.net/pic*
+// @include     https://jandan.net/ooxx*
+// @include     https://jandan.net/qa*
+
 // @require     https://cdn.bootcss.com/vue/2.4.2/vue.min.js
 // @description save jandan.net's tucao
-// @version     1.10.1
+// @version     1.10.2
 // @grant       none
 // ==/UserScript==
 if (window.top != window.self) return;
