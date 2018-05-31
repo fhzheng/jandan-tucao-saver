@@ -31,7 +31,18 @@
   }
 
 
+  /**
+   * 用于进行网络交互
+   * @class
+   */
   function Net() {
+    /**
+     * 使用get方法发送请求，默认接收json格式
+     * @param {string} url 
+     * @param {object} params 
+     * @param {string} type 
+     * @return {Promise} 成功为返回数据
+     */
     var _get = function (url, params = {}, type = "json") {
       return new Promise((resolve, reject) => {
         $.ajax({
@@ -45,12 +56,11 @@
       })
     };
 
-    var _iter = (action, condition, value) => {
-      return new Promise((resolve, reject) => {
-
-      })
-    }
-
+    /**
+     * 异步方法同步处理，顺序获取一个post下面的所有吐槽
+     * @param {string} postId 
+     * @return {Promise} 成功为吐槽列表
+     */
     var GetAllTucao = function (postId) {
       var start = false;
 
@@ -115,14 +125,26 @@
       GetHtml: _get,
     }
   };
+
   var net = Net();
 
+  /**
+   * 用于进行indexedDb的存储相关行为
+   * @class
+   */
   function Storage() {
     var db = null,
+      //db名称
       DB_NAME = 'jcdb',
+      //post表名称
       POST_TABLE = 'jcpost',
+      //comment表名称
       COMMENT_TABLE = 'jccomment';
     var _this = this;
+    /**
+     * 初始化存储
+     * @return {Promise} 成功后直接回调
+     */
     var Init = function () {
       return new Promise(function (resolve, reject) {
         if (!'indexedDB' in window) {
@@ -130,6 +152,10 @@
           return false;
         }
         var openRequest = indexedDB.open(DB_NAME, 2);
+        /**
+         * 数据库版本升级
+         * @param {Exception} e 
+         */
         openRequest.onupgradeneeded = function (e) {
           console.log("Upgrading...");
           db = e.target.result;
@@ -167,12 +193,22 @@
           }
         }
 
+        /**
+         * 数据库成功打开
+         * @param {Exception} e 
+         * @return {Promise.resolve} 直接回调
+         */
         openRequest.onsuccess = function (e) {
           console.log("Open success!");
           db = e.target.result;
           resolve();
         }
 
+        /**
+         * 数据库打开错误
+         * @param {Exception} e 
+         * @return {Promise.reject} 携带错误信息拒绝
+         */
         openRequest.onerror = function (e) {
           console.log("Error");
           console.dir(e);
@@ -181,6 +217,11 @@
       })
     };
 
+    /**
+     * 添加/更新评论
+     * @param {obj} comment 评论内容实体
+     * @param {bool} update_post 是否更新所在post的信息
+     */
     var AddComment = function (comment, update_post) {
       return new Promise(function (resolve, reject) {
         GetPostInfo(comment.postId).then(data => {
@@ -203,6 +244,10 @@
       })
     }
 
+    /**
+     * 添加/更新post信息
+     * @param {obj} post 
+     */
     var AddPost = function (post) {
       return new Promise((resolve, reject) => {
         _put(POST_TABLE, post).then(() => resolve()).catch(err => {
@@ -211,6 +256,13 @@
       })
     }
 
+    /**
+     * 根据索引和store名称，获取符合条件的指定条数内容
+     * @param {string} store_name store名称
+     * @param {string} idx 索引名称
+     * @param {string} key 索引条件
+     * @param {number} limit 获取条数
+     */
     var _get_all = function (store_name, idx, key, limit) {
       return new Promise(function (resolve, reject) {
         var t = db.transaction([store_name], 'readonly');
@@ -227,6 +279,10 @@
       })
     }
 
+    /**
+     * 获取不同页面下的所有post，固定最大50条
+     * @param {string} cate 页面分类，如ooxx、pic、duan
+     */
     var GetPostsByCate = function (cate) {
       return new Promise(function (resolve, reject) {
         _get_all(POST_TABLE, 'pageCate', cate, 50).then(data => {
@@ -244,6 +300,10 @@
       })
     };
 
+    /**
+     * 获取post下的所有吐槽，固定最大50条
+     * @param {string} postId 
+     */
     var GetCommentsByPostId = function (postId) {
       return new Promise(function (resolve, reject) {
         _get_all(COMMENT_TABLE, 'postId', postId, 50).then(data => {
@@ -254,12 +314,21 @@
       })
     };
 
+    /**
+     * 获取store实体
+     * @param {string} store_name store名称
+     * @param {string} mode 打开模式
+     */
     var _get_store = function (store_name, mode = 'readonly') {
       var t = db.transaction([store_name], mode);
       var store = t.objectStore(store_name);
       return store;
     }
 
+    /**
+     * 根据postid获取post的信息
+     * @param {string} postId 
+     */
     var GetPostInfo = function (postId) {
       return new Promise(function (resolve, reject) {
         _get(POST_TABLE, postId).then(data => {
@@ -270,6 +339,11 @@
       });
     }
 
+    /**
+     * 根据commentid获取吐槽的信息
+     * @param {string} commentId 
+     * @return {Promise}
+     */
     var GetCommentInfo = function (commentId) {
       return new Promise(function (resolve, reject) {
         _get(COMMENT_TABLE, commentId).then(data => {
@@ -280,6 +354,12 @@
       });
     }
 
+    /**
+     * 从特定的store，获取指定id的实体
+     * @param {string} store_name 
+     * @param {string} key 
+     * @return {Promise}
+     */
     var _get = function (store_name, key) {
       return new Promise(function (resolve, reject) {
         var request = _get_store(store_name).get(key);
@@ -294,6 +374,12 @@
       })
     }
 
+    /**
+     * 添加/更新内容到指定store
+     * @param {string} store_name 
+     * @param {string} value 
+     * @return {Promise}
+     */
     var _put = function (store_name, value) {
       return new Promise(function (resolve, reject) {
         var request = _get_store(store_name, 'readwrite').put(value);
@@ -308,6 +394,12 @@
       })
     }
 
+    /**
+     * 删除指定store下的指定条目
+     * @param {string} store_name 
+     * @param {string} key 
+     * @return {Promise}
+     */
     var _delete = function (store_name, key) {
       return new Promise(function (resolve, reject) {
         var request = _get_store(store_name, 'readwrite').delete(key);
@@ -321,7 +413,12 @@
       })
     };
 
-    var DeletePost = function (postId, callback) {
+    /**
+     * 删除post
+     * @param {string} postId 
+     * @return {Promise}
+     */
+    var DeletePost = function (postId) {
       return new Promise((resolve, reject) => {
         _delete(POST_TABLE, postId).then(() => {
           resolve();
@@ -331,6 +428,10 @@
       });
     };
 
+    /**
+     * 删除吐槽
+     * @param {string} commentId 
+     */
     var DeleteComment = function (commentId) {
       return new Promise(function (resolve, reject) {
         GetCommentInfo(commentId).then(c => {
@@ -363,7 +464,9 @@
     };
   }
   var storage = Storage();
+
   $.jcsaver = {
+    //固定的页面
     jc_pages: [{
         id: 'ooxx',
         name: '妹子图',
@@ -394,6 +497,7 @@
     st_item_prefix: "jc_",
     st_db: null,
     page_cate: undefined,
+    //自定义css
     jc_css: `
 #jc_area {
 text-align: left;
@@ -511,6 +615,7 @@ cursor: pointer;
   }
 }
   `,
+    //自定义vue HTML
     jc_html: $(`
 <div id="jc_main">
 <div id="jc_area" v-show="show">
@@ -540,8 +645,11 @@ cursor: pointer;
 </div>
 </div>
   `),
+    //当前页面序号
     jc_current_page: "",
-    //当页面初始化的时候发现
+    /**
+     * 当页面初始化的时候触发，用于解析页面hash确定是否需要跳转。
+     */
     onPageLoad: function () {
       var myregexp = /#comment-\d+/g;
       var hash = myregexp.exec($(location).attr('hash'));
@@ -586,6 +694,12 @@ cursor: pointer;
       console.log(url);
       if (confirm('你寻找的post id:' + hash + ' 在当前页不存在，是否跳转到\n' + url + '\n继续寻找?')) window.location.href = url;
     },
+    /**
+     * 监听到ajax成功后执行，用于解析成功后的数据
+     * @param {event} event
+     * @param {xhr} xhr
+     * @param {settings} settings
+     */
     onAjaxSuccess: function (event, xhr, settings) {
       if (settings.url == "/jandan-tucao.php" && xhr.responseJSON.code == "0") {
         var data = xhr.responseJSON.data;
@@ -604,15 +718,22 @@ cursor: pointer;
         });
       }
     },
+
+    /**
+     * 初始化
+     */
     init: function () {
+      //获取页面分类，比如pic、ooxx、duan
       var pageKey = $.jcsaver.getPageKey();
       var _this = this;
       if ($.inArray(pageKey, $.jcsaver.jc_pages.map(page => page.id)) < 0) {
         console.log('Jandan_tucao_saver: current page not match!');
         return false;
       }
+      //初始化存储
       storage.Init().then(e => {
         _this.jc_current_page = null;
+        //获取页码
         var result = new RegExp('page-([^&#]*)').exec(window.location.href);
         if (result != null) {
           _this.jc_current_page = parseFloat(result[1]);
@@ -625,7 +746,6 @@ cursor: pointer;
             return Promise.resolve();
           })
         }
-        // jc_vue.sync(()=>{jc_vue.syncing = false});
       }).then(() => {
         $.jcsaver.onPageLoad();
         _this.st_index_key = _this.st_index_prefix + pageKey;
@@ -641,6 +761,9 @@ cursor: pointer;
         alert('An error occured!');
       })
     },
+    /**
+     * 获取当前页面分类
+     */
     getPageKey: function () {
       if ($.jcsaver.page_cate) return $.jcsaver.page_cate;
       var url = window.location.href;
@@ -663,14 +786,22 @@ cursor: pointer;
         syncing: false,
       },
       filters: {
+        //根据post信息获取跳转到的页面地址
         getUrl: function (post) {
           return "/" + post.pageCate + "/page-" + post.pageNo + "#comment-" + post.postId;
         },
+        /**
+         * 去掉HTML标签
+         */
         removeHTMLTags: function (string) {
           return string.replace(/(<([^>]+)>)/ig, '');
         }
       },
       methods: {
+        /**
+         * 刷新自己所有历史吐槽得到的回复，手动触发。
+         * @return {undefined} 回调函数
+         */
         sync: function (callback) {
           var promiseArray = [];
           jc_vue.pages.forEach(page => {
@@ -739,12 +870,18 @@ cursor: pointer;
             if (typeof (callback) == 'function') callback();
           })
         },
+        /**
+         * 刷新
+         */
         refresh: function () {
           storage.GetPostsByCate(jc_vue.current_page).then(data => {
             // console.log(data);
             jc_vue.items = data;
           })
         },
+        /**
+         * 加载post下面的所有吐槽。
+         */
         loadComments: function (postId, visable) {
           if (visable) visable = false;
           else visable = true;
@@ -769,6 +906,9 @@ cursor: pointer;
             if (e !== Exceptions.BreakException) throw e;
           }
         },
+        /**
+         * 删除post
+         */
         deletePost: function (postId) {
           return new Promise((resolve, reject) => {
             storage.DeletePost(postId).then(() => {
