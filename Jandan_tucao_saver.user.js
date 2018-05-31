@@ -6,11 +6,15 @@
 // @include     http://jandan.net/pic*
 // @include     http://jandan.net/ooxx*
 // @include     http://jandan.net/qa*
+// @include     http://jandan.net/pond*
+// @include     http://jandan.net/zhoubian*
 
 // @include     https://jandan.net/duan*
 // @include     https://jandan.net/pic*
 // @include     https://jandan.net/ooxx*
 // @include     https://jandan.net/qa*
+// @include     https://jandan.net/pond*
+// @include     https://jandan.net/zhoubian*
 
 // @require     https://cdn.bootcss.com/vue/2.4.2/vue.min.js
 // @description save jandan.net's tucao
@@ -180,7 +184,7 @@
     var AddComment = function (comment, update_post) {
       return new Promise(function (resolve, reject) {
         GetPostInfo(comment.postId).then(data => {
-          if(!update_post) return Promise.resolve();
+          if (!update_post) return Promise.resolve();
           _put(POST_TABLE, {
             postId: comment.postId,
             updateDate: comment.date,
@@ -280,7 +284,7 @@
       return new Promise(function (resolve, reject) {
         var request = _get_store(store_name).get(key);
         request.onsuccess = function () {
-          console.log(request.result);
+          // console.log(request.result);
           resolve(request.result);
         }
         request.onerror = function (err) {
@@ -355,11 +359,36 @@
       GetPostsByCate,
       DeletePost,
       AddPost,
+      GetPostInfo,
     };
   }
   var storage = Storage();
   $.jcsaver = {
-    jc_keys: ["duan", "pic", "ooxx", "qa"],
+    jc_pages: [{
+        id: 'ooxx',
+        name: '妹子图',
+      }, {
+        id: 'pic',
+        name: '无聊图',
+      },
+      {
+        id: 'duan',
+        name: '段子',
+      },
+      {
+        id: 'qa',
+        name: '问答',
+      },
+      {
+        id: 'pond',
+        name: '鱼塘',
+      },
+      {
+        id: 'zhoubian',
+        name: '周边',
+      },
+
+    ],
     st_index_prefix: "jc_index_",
     st_index_key: "",
     st_item_prefix: "jc_",
@@ -485,7 +514,7 @@ cursor: pointer;
     jc_html: $(`
 <div id="jc_main">
 <div id="jc_area" v-show="show">
-    <div class="jc_switch_bar"><span v-for="page in pages" v-bind:page="page" v-on:click="current_page = page; refresh();" v-bind:class="page==current_page?'current_tab':''">{{ page|getPageName }}</span></div>
+    <div class="jc_switch_bar"><span v-for="page in pages" v-bind:page="page.id" v-on:click="current_page = page.id; refresh();" v-bind:class="page.id==current_page?'current_tab jc_tab':'jc_tab'">{{ page.name }}</span></div>
     <div class="jc_list_area">
         <div v-for="(item,idx) in items" v-bind:class="'jc_bar jc_bar'+idx%2">&#9679;
             <a v-bind:cno="item.k" v-on:click="loadComments(item.postId, item.visable)" class="jc_exp">第{{ item.pageNo }}页 第{{ item.postId }}楼 {{ item.count }}条评论<span class="reply-total" v-if="item.reply_total_count > 0">，{{ item.reply_total_count }}条回复<span/></a>
@@ -512,103 +541,56 @@ cursor: pointer;
 </div>
   `),
     jc_current_page: "",
-    onPageLoad: function () { //当页面初始化的时候发现
+    //当页面初始化的时候发现
+    onPageLoad: function () {
       var myregexp = /#comment-\d+/g;
       var hash = myregexp.exec($(location).attr('hash'));
       if (hash === null || hash === undefined || hash.length <= 0) return;
       hash = hash[0];
       if ($(hash).length > 0) {
-        var index_storage = JSON.parse(localStorage.getItem($.jcsaver.st_index_key));
-        console.log(index_storage);
-        if (index_storage === null || index_storage.length <= 0) return;
-        // 更新index数据库当前post的页数
-        $.each(index_storage, function (index, val) {
-          if (val['k'] == hash.split('-')[1]) {
-            if (val['p'] != $.jcsaver.jc_current_page) {
-              val['p'] = $.jcsaver.jc_current_page;
-              localStorage.setItem($.jcsaver.st_index_key, JSON.stringify(index_storage));
-            }
-            return false;
+        console.log('在当前页');
+        var post_id = hash.split('-')[1];
+        storage.GetPostInfo(post_id).then(post => {
+          console.log('post信息', post.postId, post.pageNo);
+          if(post && post.pageNo != $.jcsaver.jc_current_page){
+            post.pageNo = $.jcsaver.jc_current_page;
+            storage.AddPost(post).then(() => {
+              console.log("post更新完成", post.postId, post.pageNo);
+            });
           }
-        });
+        })
         return;
       }
+      console.log('不在当前页');
       if (parseInt($('.commentlist li').eq(0).attr('id').split('-')[1]) < parseInt(hash.split('-')[1])) {
-        $.jcsaver.turnPage($.jcsaver.jc_current_page + 1, hash);
-        return;
+        var next_page = $('.next-comment-page').eq(0);
+        if(next_page.length == 1){
+          next_page = next_page.attr('href').split('-')[1].split('#')[0];
+          $.jcsaver.turnPage(next_page, hash);
+          return;
+        }
       }
       if (parseInt($('.commentlist li').eq(-1).attr('id').split('-')[1]) > parseInt(hash.split('-')[1])) {
-        $.jcsaver.turnPage($.jcsaver.jc_current_page - 1, hash);
-        return;
+        var next_page = $('.previous-comment-page').eq(0);
+        if(next_page.length == 1){
+          next_page = next_page.attr('href').split('-')[1].split('#')[0];
+          $.jcsaver.turnPage(next_page, hash);
+          return;
+        }
       }
+      alert("你寻找的post id:" + hash + "已经被删除！");
     },
     // 翻页
     turnPage: function (pageNo, hash) {
       var url = '//jandan.net/' + $.jcsaver.getPageKey() + '/page-' + pageNo + hash;
       console.log(url);
-      if (confirm('跳转到' + url + '?')) window.location.href = url;
-    },
-    // 获取回复
-    refreshReply: function () {
-      $.each($.jcsaver.jc_keys, function (cat_idx, cat_val) {
-        var cat_key = $.jcsaver.st_index_prefix + cat_val;
-        var post_list = $.jcsaver.storage.get(cat_key);
-        if (!$.isArray(post_list)) return true;
-        $.each(post_list, function (post_idx, post_val) {
-          var r = 0;
-          var my_comment_list = $.jcsaver.storage.get('jc_' + post_val.k);
-          $.get('/tucao/' + post_val.k, function (data) {
-            // 获取到了这条post下面的所有吐槽
-            $.each(my_comment_list, function (my_idx, my_val) {
-              // console.log(my_val);
-              my_val.rl = [];
-              $.each(data.tucao, function (remote_idx, remote_val) {
-                // console.log(remote_val);
-                var regexP = /href=\"#tucao-\d+/g;
-                var regexL = regexP.exec(remote_val.comment_content);
-                if (!$.isArray(regexL)) return true;
-                // console.log(regexL);
-                // console.log('href="#tucao-' + my_val.c);
-                if ($.inArray('href="#tucao-' + my_val.c, regexL) >= 0) {
-                  // console.log('========================');
-                  // console.log(remote_val.comment_content);
-                  var n = [];
-                  n.push(remote_val.comment_author);
-                  n.push(remote_val.comment_content);
-                  my_val.rl.push(n);
-                  // console.log(n);
-                }
-              })
-            });
-            // console.log(my_comment_list);
-            localStorage.setItem('jc_' + post_val.k, JSON.stringify(my_comment_list));
-          })
-        });
-      });
+      if (confirm('你寻找的post id:' + hash + ' 在当前页不存在，是否跳转到\n' + url + '\n继续寻找?')) window.location.href = url;
     },
     onAjaxSuccess: function (event, xhr, settings) {
       if (settings.url == "/jandan-tucao.php" && xhr.responseJSON.code == "0") {
         var data = xhr.responseJSON.data;
-        var key = data.comment_post_ID;
-        var value = {};
-        value.c = data.comment_ID; //评论id
-        value.cp = data.comment_post_ID; //主条目id
-        value.a = data.comment_author; //作者
-        value.d = data.comment_date; //日期
-        value.co = data.comment_content; //评论内容
-        var st = this.storage;
-        st.add(key, value);
-        value.tid = value.c;
-        value.page_key = $.jcsaver.getPageKey();
-        value = {};
 
-        // var comment = {
-        //   tucaoId: '',
-        //   postId: null,
-        //   date: null,
-        //   content: null,
-        //   author: null,
-        // };
+        var value = {};
         value.tucaoId = data.comment_ID;
         value.postId = data.comment_post_ID;
         value.date = data.comment_date;
@@ -616,47 +598,26 @@ cursor: pointer;
         value.author = data.comment_author;
         value.page_cate = $.jcsaver.getPageKey();
         value.page_no = $.jcsaver.jc_current_page;
+
         storage.AddComment(value, true).catch(err => {
           alert("保存失败！请查看控制台日志！");
         });
       }
     },
-    switchArea: function (node) {
-      var page = node.attr("page");
-      jc_vue.current_page = page;
-      var index_list = this.storage.get(this.st_index_prefix + page);
-      if (index_list === null) index_list = [];
-      $.each(index_list, function (index, value) {
-        value.e = false;
-      });
-      jc_vue.items = index_list;
-    },
-    expandComment: function (cno) {
-      key = $.jcsaver.st_item_prefix + cno;
-      var citem = $.jcsaver.storage.get(key);
-      // console.log(citem);
-      $.each(jc_vue.items, function (index, value) {
-        if (value.k == cno) {
-          jc_vue.$set(jc_vue.items[index], "comments", citem);
-          return false;
-        }
-      });
-    },
     init: function () {
       var pageKey = $.jcsaver.getPageKey();
       var _this = this;
-      if ($.inArray(pageKey, ['duan', 'pic', 'ooxx', 'qa']) < 0) {
+      if ($.inArray(pageKey, $.jcsaver.jc_pages.map(page=>page.id)) < 0) {
         console.log('Jandan_tucao_saver: current page not match!');
         return false;
       }
       storage.Init().then(e => {
         _this.jc_current_page = null;
         var result = new RegExp('page-([^&#]*)').exec(window.location.href);
-        if(result != null) {
+        if (result != null) {
           _this.jc_current_page = parseFloat(result[1]);
           return Promise.resolve();
-        }
-        else{
+        } else {
           var next_page_url = $('.previous-comment-page').eq(0).attr('href');
           net.GetHtml(next_page_url, {}, 'text').then(data => {
             result = new RegExp('Newer Comments" href=([^&#]*)page-([^&#]*)').exec(data)
@@ -666,6 +627,7 @@ cursor: pointer;
         }
         // jc_vue.sync(()=>{jc_vue.syncing = false});
       }).then(() => {
+        $.jcsaver.onPageLoad();
         _this.st_index_key = _this.st_index_prefix + pageKey;
         $style = $("<style></style>");
         $style.text(_this.jc_css);
@@ -679,11 +641,6 @@ cursor: pointer;
         alert('An error occured!');
       })
     },
-    initVue: function () {
-      var pageKey = $.jcsaver.getPageKey();
-      jc_vue.pages = $.jcsaver.storage.addKey(pageKey);
-      // console.log(jc_vue.pages);
-    },
     getPageKey: function () {
       if ($.jcsaver.page_cate) return $.jcsaver.page_cate;
       var url = window.location.href;
@@ -691,94 +648,15 @@ cursor: pointer;
       $.jcsaver.page_cate = subPath[3];
       return $.jcsaver.page_cate;
     },
-    storage: {
-      addKey: function (key) {
-        var k = "jc_keys";
-        var cachedKeys = localStorage.getItem(k);
-        if (cachedKeys === null) cachedKeys = [];
-        else cachedKeys = JSON.parse(cachedKeys);
-        //   console.log(cachedKeys);
-        var flag = true;
-        $.each(cachedKeys, function (index, value) {
-          if (value == key) {
-            flag = false;
-            return false;
-          }
-        });
-        if (flag) {
-          cachedKeys.push(key);
-          localStorage.setItem(k, JSON.stringify(cachedKeys));
-        }
-        //   console.log(cachedKeys);
-        return cachedKeys;
-      },
-      add: function (key, value) {
-        var item_key = $.jcsaver.st_item_prefix + key;
-        var item_value = localStorage.getItem(item_key);
-        if (item_value === null) {
-          var item_list = [];
-          item_list.push(value);
-          localStorage.setItem(item_key, JSON.stringify(item_list));
-        } else {
-          var item_list = JSON.parse(item_value);
-          if (!$.isArray(item_list)) item_list = [];
-          item_list.push(value);
-          localStorage.setItem(item_key, JSON.stringify(item_list));
-        }
-
-        var index_list = localStorage.getItem($.jcsaver.st_index_key);
-        //   console.log(index_list);
-        index_list = JSON.parse(index_list);
-        //   console.log($.isArray(index_list));
-        if (!$.isArray(index_list)) {
-          // console.log("不是列表");
-          index_list = [];
-        }
-        var flag = false;
-        $.each(index_list, function (i, v) {
-          // console.log(v);
-          if (v.k == key) {
-            v.c += 1;
-            flag = true;
-            return false;
-          }
-        });
-        if (!flag) {
-          var n = {};
-          n.k = key;
-          n.c = 1;
-          n.p = $.jcsaver.jc_current_page;
-          // console.log(n);
-          index_list.push(n);
-        }
-        localStorage.setItem($.jcsaver.st_index_key, JSON.stringify(index_list));
-      },
-      delete: function (key) {
-        localStorage.removeItem(key);
-      },
-      get: function (key) {
-        return JSON.parse(localStorage.getItem(key));
-      },
-      clear: function (key) {
-        var index_list = localStorage.getItem($.jcsaver.st_index_key);
-        index_list = JSON.parse(index_list);
-        if (!$.isArray(index_list)) index_list = [];
-        $.each(index_list, function (index, value) {
-          localStorage.removeItem(index);
-        });
-        localStorage.removeItem($.jcsaver.st_index_key);
-      }
-    }
   };
 
-  $.jcsaver.init();
 
   var jc_vue = undefined;
   var initVue = function () {
     jc_vue = new Vue({
       el: "#jc_main",
       data: {
-        pages: $.jcsaver.jc_keys,
+        pages: $.jcsaver.jc_pages,
         items: [],
         show: false,
         current_page: "",
@@ -806,7 +684,8 @@ cursor: pointer;
       methods: {
         sync: function (callback) {
           var promiseArray = [];
-          jc_vue.pages.forEach(page_key => {
+          jc_vue.pages.forEach(page => {
+            var page_key = page.id;
             promiseArray.push(
               new Promise((resolve, reject) => {
                 var subPromiseArray = [];
@@ -816,7 +695,7 @@ cursor: pointer;
                       var post_total_reply = 0;
                       storage.GetCommentsByPostId(post.postId).then(comments => {
                         net.GetAllTucao(post.postId).then(tucao_list => {
-                          console.log(tucao_list);
+                          console.log('post', post.postId, '吐槽数量', Object.keys(tucao_list).length);
                           comments.forEach(comment => {
                             let current_comment_reply_count = 0;
                             for (var key in tucao_list) {
@@ -873,7 +752,7 @@ cursor: pointer;
         },
         refresh: function () {
           storage.GetPostsByCate(jc_vue.current_page).then(data => {
-            console.log(data);
+            // console.log(data);
             jc_vue.items = data;
           })
         },
@@ -900,7 +779,6 @@ cursor: pointer;
           } catch (e) {
             if (e !== Exceptions.BreakException) throw e;
           }
-          // $.jcsaver.expandComment(cno);
         },
         deletePost: function (postId) {
           return new Promise((resolve, reject) => {
@@ -911,22 +789,12 @@ cursor: pointer;
             });
           })
         },
-        renderReplies: function (replies) {
-          var result = "";
-          $.each(replies, function (idx, val) {
-            result += val[0] + ': ';
-            result += val[1].replace(/(<([^>]+)>)/ig, '') + '\n\n';
-          })
-          return result;
-        }
       }
     });
   }
 
-
-  // $.jcsaver.initVue();
-  // $.jcsaver.refreshReply();
-  $(document).ajaxSuccess(function (event, xhr, settings) {
+  $.jcsaver.init();
+  $(document).ajaxSuccess((event, xhr, settings) => {
     $.jcsaver.onAjaxSuccess(event, xhr, settings);
   });
 })();
