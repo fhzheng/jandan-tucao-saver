@@ -579,15 +579,18 @@ line-height: 30px;
 background-color: #c9c9c9;
 }
 .jc_hint {
-display: inline-block;
-height: 24px;
-width: 24px;
-line-height: 24px;
-text-align: center;
-background-color: red;
-border-radius: 50%;
-color: white;
-cursor: pointer;
+  height: 24px;
+  width: 24px;
+  line-height: 24px;
+  text-align: center;
+  color: green;
+  cursor: pointer;
+}
+strong.jc_hint:before {
+  content: '[';
+}
+strong.jc_hint:after {
+  content: '条回复]';
 }
 .jc_sync {
   position: absolute;
@@ -627,7 +630,7 @@ cursor: pointer;
             </span>
             <span class="jc_del" v-on:click="deletePost(item.postId).then(() => {refresh();}).catch(e => {console.dir(e);});" title="Delete this comment">&#10005;</span>
             <div class="jc_comments" v-show="item.visable">
-                <div v-for="comment in item.comments">{{ comment.date+':' }} <strong>{{ comment.content|removeHTMLTags }}</strong></div>
+                <div v-for="comment in item.comments">{{ comment.date+':' }} <strong class='jc_hint' v-bind:title="comment.reply_count + '条回复'" v-show="comment.reply_count > 0">{{ comment.reply_count }}</strong><strong>{{ comment.content|removeHTMLTags }}</strong></div>
             </div>
         </div>
     </div>
@@ -641,7 +644,7 @@ cursor: pointer;
     <span v-else>打开</span>
     </span>
     <span class="settings">设置</span>
-    <span class="resync" v-on:click="syncing=true;sync(()=>{syncing=false})">同步</span>
+    <span class="resync" v-on:click="if(syncing)return;syncing=true;sync(()=>{syncing=false})">同步</span>
 </div>
 </div>
   `),
@@ -659,7 +662,7 @@ cursor: pointer;
         console.log('在当前页');
         var post_id = hash.split('-')[1];
         storage.GetPostInfo(post_id).then(post => {
-          console.log('post信息', post.postId, post.pageNo);
+          console.log('post信息', post);
           if (post && post.pageNo != $.jcsaver.jc_current_page) {
             post.pageNo = $.jcsaver.jc_current_page;
             storage.AddPost(post).then(() => {
