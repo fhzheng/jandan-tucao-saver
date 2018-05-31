@@ -552,7 +552,7 @@ cursor: pointer;
         var post_id = hash.split('-')[1];
         storage.GetPostInfo(post_id).then(post => {
           console.log('post信息', post.postId, post.pageNo);
-          if(post && post.pageNo != $.jcsaver.jc_current_page){
+          if (post && post.pageNo != $.jcsaver.jc_current_page) {
             post.pageNo = $.jcsaver.jc_current_page;
             storage.AddPost(post).then(() => {
               console.log("post更新完成", post.postId, post.pageNo);
@@ -564,7 +564,7 @@ cursor: pointer;
       console.log('不在当前页');
       if (parseInt($('.commentlist li').eq(0).attr('id').split('-')[1]) < parseInt(hash.split('-')[1])) {
         var next_page = $('.next-comment-page').eq(0);
-        if(next_page.length == 1){
+        if (next_page.length == 1) {
           next_page = next_page.attr('href').split('-')[1].split('#')[0];
           $.jcsaver.turnPage(next_page, hash);
           return;
@@ -572,7 +572,7 @@ cursor: pointer;
       }
       if (parseInt($('.commentlist li').eq(-1).attr('id').split('-')[1]) > parseInt(hash.split('-')[1])) {
         var next_page = $('.previous-comment-page').eq(0);
-        if(next_page.length == 1){
+        if (next_page.length == 1) {
           next_page = next_page.attr('href').split('-')[1].split('#')[0];
           $.jcsaver.turnPage(next_page, hash);
           return;
@@ -607,7 +607,7 @@ cursor: pointer;
     init: function () {
       var pageKey = $.jcsaver.getPageKey();
       var _this = this;
-      if ($.inArray(pageKey, $.jcsaver.jc_pages.map(page=>page.id)) < 0) {
+      if ($.inArray(pageKey, $.jcsaver.jc_pages.map(page => page.id)) < 0) {
         console.log('Jandan_tucao_saver: current page not match!');
         return false;
       }
@@ -665,17 +665,6 @@ cursor: pointer;
       filters: {
         getUrl: function (post) {
           return "/" + post.pageCate + "/page-" + post.pageNo + "#comment-" + post.postId;
-        },
-        getPageName: function (key) {
-          const page_names = {
-            pic: "无聊图",
-            ooxx: "妹子图",
-            qa: "问答",
-            duan: "段子"
-          };
-          var result = page_names[key];
-          if (result === undefined) result = key;
-          return result;
         },
         removeHTMLTags: function (string) {
           return string.replace(/(<([^>]+)>)/ig, '');
